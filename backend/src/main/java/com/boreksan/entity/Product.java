@@ -1,23 +1,23 @@
 package com.boreksan.entity;
 
-import jakarta.persistence.*; // Spring'in veritabanı sihirbazı
-import lombok.Data;          // Getter/Setter yazmamak için
+import jakarta.persistence.*;
+import lombok.Data;
 
-@Data   // Lombok: Bize otomatik getter, setter, toString vs. üretir.
-@Entity // Spring: "Hey, bu sınıf aslında bir Veritabanı Tablosudur!"
-@Table(name = "products") // Veritabanındaki tablo adı "products" olsun.
+@Data
+@Entity
+@Table(name = "products")
 public class Product {
 
-    @Id // Bu sütun kimlik kartıdır (Primary Key).
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // 1, 2, 3 diye otomatik artsın.
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;        // Ürün Adı (Kıymalı Börek)
+    private String name;
+    private String description;
+    
+    @Column(name = "price_portion")
+    private Double pricePortion;
 
-    private Double price;       // Fiyatı
-
-    private String description; // Açıklama
-
-    @Column(name = "is_public") // Veritabanında "is_public" diye yazılsın.
-    private boolean isPublic;   // Vitrinde görünecek mi?
+    @Column(name = "price_tray")
+    private Double priceTray;
 }
