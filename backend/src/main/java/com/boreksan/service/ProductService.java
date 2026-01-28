@@ -9,7 +9,6 @@ import com.boreksan.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -49,7 +48,7 @@ public class ProductService {
         return productRepository.findAll()
                 .stream()
                 .map(this::mapToResponse) // Convert each product to a Response
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // 2. Create
