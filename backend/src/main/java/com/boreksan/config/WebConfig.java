@@ -9,9 +9,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // Tüm API adreslerine izin ver
-                .allowedOrigins("http://localhost:3000") // Sadece Next.js'in çalıştığı adrese izin ver
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // İzin verilen metodlar
+        registry.addMapping("/**") // Allow all API endpoints
+                .allowedOrigins("http://localhost:3000") // Only allow requests from the Next.js address. TEMPORARILY for development
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allowed HTTP methods
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }

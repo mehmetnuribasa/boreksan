@@ -22,47 +22,46 @@ public class JwtService {
     @Value("${REFRESH_SECRET_KEY}")
     private String refreshSecretKey;
 
-    // Access ve Refresh token süreleri (ms)
-    private static final long ACCESS_TOKEN_EXPIRATION = 1000L * 60 * 15; // 15 dakika
-    private static final long REFRESH_TOKEN_EXPIRATION = 1000L * 60 * 60 * 24 * 7; // 7 gün
+    // Access and Refresh token expiration times (ms)
+    private static final long ACCESS_TOKEN_EXPIRATION = 1000L * 60 * 15; // 15 minutes
+    private static final long REFRESH_TOKEN_EXPIRATION = 1000L * 60 * 60 * 24 * 7; // 7 days
+    
 
-    // --- KULLANIM METODLARI ---
-
-    // Access token'dan username çıkar
+    // Extract username from access token
     public String extractUsernameFromAccessToken(String token) {
         return extractClaimFromAccessToken(token, Claims::getSubject);
     }
 
-    // Refresh token'dan username çıkar
+    // Extract username from refresh token
     public String extractUsernameFromRefreshToken(String token) {
         return extractClaimFromRefreshToken(token, Claims::getSubject);
     }
 
-    // Access token geçerli mi?
+    // Is the access token valid?
     public boolean isAccessTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsernameFromAccessToken(token);
         return (username.equals(userDetails.getUsername()))
                 && !isAccessTokenExpired(token);
     }
 
-    // Refresh token geçerli mi?
+    // Is the refresh token valid?
     public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsernameFromRefreshToken(token);
         return (username.equals(userDetails.getUsername()))
                 && !isRefreshTokenExpired(token);
     }
 
-    // Access Token Üret (access secret ile imzalanır)
+    // Generate Access Token (signed with access secret)
     public String generateAccessToken(UserDetails userDetails) {
         return buildToken(userDetails, ACCESS_TOKEN_EXPIRATION, getAccessSignInKey());
     }
 
-    // Refresh Token Üret (refresh secret ile imzalanır)
+    // Generate Refresh Token (signed with refresh secret)
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(userDetails, REFRESH_TOKEN_EXPIRATION, getRefreshSignInKey());
     }
 
-    // --- Ortak token üretim metodu ---
+    // --- Common token generation method ---
     private String buildToken(UserDetails userDetails, long expirationMillis, Key signingKey) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
@@ -72,7 +71,7 @@ public class JwtService {
                 .compact();
     }
 
-    // --- Yardımcı Metodlar ---
+    // --- Helper Methods ---
 
     private boolean isAccessTokenExpired(String token) {
         return extractAccessTokenExpiration(token).before(new Date());

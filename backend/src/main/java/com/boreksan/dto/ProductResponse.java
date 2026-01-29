@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class ProductResponse {
-    private Long id; // Okurken ID'yi görmek isteriz
+    private Long id;
     private String name;
     private String description;
     private Double pricePortion;

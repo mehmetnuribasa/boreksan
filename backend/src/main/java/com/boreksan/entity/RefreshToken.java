@@ -23,7 +23,7 @@ public class RefreshToken {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE) // User silinince ilgili refresh token'lar da silinsin
+    @OnDelete(action = OnDeleteAction.CASCADE) // When a user is deleted, delete their refresh tokens too
     private User user;
 
     @Column(nullable = false)

@@ -12,7 +12,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "Password cannot be blank")
     @Pattern(
-            // İstenen: büyük + küçük harf + rakam + özel karakter (., @$!%*?&)
+            // At least 8 characters, one uppercase, one lowercase, one number, one special character
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[.@$!%*?&])[A-Za-z\\d.@$!%*?&]{8,}$", message = "Password must be at least 8 characters long and include one uppercase letter, one lowercase letter, one number, and one special character")
     private String password;
 }

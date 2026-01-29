@@ -15,17 +15,17 @@ import java.util.List;
 
 @Data
 @Entity
-@Table(name = "users") // "user" kelimesi PostgreSQL'de yasaklıdır, "users" yaptık.
+@Table(name = "users") // "user" is a reserved keyword in some databases
 public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true) // Aynı kullanıcı adı ile iki kişi olamaz
+    @Column(unique = true) // No two users can have the same username
     private String username;
 
-    private String password; // Şifrelenmiş olarak saklanacak
+    private String password; // Stored in encrypted form
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -34,7 +34,7 @@ public class User implements UserDetails {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    // --- Spring Security Metodları (Mecburi) ---
+    // --- Spring Security Methods ---
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

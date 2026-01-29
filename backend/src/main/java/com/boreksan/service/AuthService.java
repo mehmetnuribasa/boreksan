@@ -31,29 +31,28 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request, HttpServletResponse response) {
-        // Daha kullanıcı oluşturmadan önce kontrol et: aynı username var mı?
+        // Check if the username already exists before creating a new user
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new UsernameAlreadyExistsException("Username already exists");
         }
 
         var user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword())); // Şifreyi gizle
-        // Yeni kayıt olan herkes CUSTOMER olacak (role artık request'ten gelmiyor)
-        user.setRole(Role.CUSTOMER);
+        user.setPassword(passwordEncoder.encode(request.getPassword())); // Encrypt the password
+        user.setRole(Role.CUSTOMER);    // All new users are assigned the CUSTOMER role
 
         userRepository.save(user);
 
         var accessToken = jwtService.generateAccessToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
 
-        // Kullanıcıya ait eski refresh token'ları temizle (varsa)
+        // Clear any existing refresh tokens for the user (if any)
         refreshTokenRepository.deleteByUser(user);
 
-        // Yeni refresh token'ı DB'ye kaydet
+        // Save the new refresh token to the database
         saveRefreshToken(user, refreshToken);
 
-        // Refresh token'ı HttpOnly cookie olarak ayarla
+        // Set the refresh token as an HttpOnly cookie
         addRefreshTokenCookie(response, refreshToken);
 
         return new AuthResponse(accessToken);
@@ -68,13 +67,13 @@ public class AuthService {
         var accessToken = jwtService.generateAccessToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
 
-        // Kullanıcıya ait eski refresh token'ları temizle (varsa)
+        // Clear any existing refresh tokens for the user (if any)
         refreshTokenRepository.deleteByUser(user);
 
-        // Yeni refresh token'ı DB'ye kaydet
+        // Save the new refresh token to the database
         saveRefreshToken(user, refreshToken);
 
-        // Refresh token'ı HttpOnly cookie olarak ayarla
+        // Set the refresh token as an HttpOnly cookie
         addRefreshTokenCookie(response, refreshToken);
 
         return new AuthResponse(accessToken);
@@ -85,29 +84,25 @@ public class AuthService {
         String refreshToken = request.getRefreshToken();
         String username = jwtService.extractUsernameFromRefreshToken(refreshToken);
 
+        // Check if the user exists
         var user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidTokenException("User not found for refresh token"));
 
-        // DB'de bu token kayıtlı mı ve iptal edilmemiş mi?
+        // Check if the token exists in the database and is not revoked
         RefreshToken storedToken = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token not found in database"));
 
+        // Check if the token is revoked or expired
         if (storedToken.isRevoked() || storedToken.getExpiryDate().before(new Date())) {
             throw new InvalidTokenException("Refresh token is expired or revoked");
         }
 
+        // Validate the token
         if (!jwtService.isRefreshTokenValid(refreshToken, user)) {
             throw new InvalidTokenException("Invalid refresh token");
         }
 
         var newAccessToken = jwtService.generateAccessToken(user);
-
-        // İsteğe bağlı: token rotation istenirse burada yeni refresh token
-        // üretilebilir.
-        // Senin isteğine göre mevcut refresh token'ı koruyoruz, rotation yok.
-
-        // Cookie'yi tekrar yazarak süresini yenileyebiliriz (isteğe bağlı).
-        addRefreshTokenCookie(response, refreshToken);
 
         return new AuthResponse(newAccessToken);
     }
@@ -116,7 +111,7 @@ public class AuthService {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
         refreshToken.setToken(token);
-        // JWT servisindeki süre ile uyumlu şekilde 7 gün sonrasını atıyoruz
+        // Set the expiration date to 7 days from now, consistent with the JWT service
         refreshToken.setExpiryDate(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 7));
         refreshToken.setRevoked(false);
         refreshTokenRepository.save(refreshToken);
@@ -125,9 +120,9 @@ public class AuthService {
     private void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true); // prod'da HTTPS ile kullanılmalı
-        cookie.setPath("/"); // tüm endpoint'lerde erişilebilir
-        cookie.setMaxAge(7 * 24 * 60 * 60); // 7 gün (saniye)
+        cookie.setSecure(false); // Should be true in production with HTTPS, TEMPORARILY false
+        cookie.setPath("/"); // Accessible on all endpoints
+        cookie.setMaxAge(7 * 24 * 60 * 60); // 7 days (in seconds)
         response.addCookie(cookie);
     }
 }
