@@ -36,31 +36,58 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String userEmail;
 
+        // Token yoksa veya Bearer ile başlamıyorsa zincire devam et (Anonim giriş)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 2. "Bearer " kısmını kesip sadece token'ı al
-        jwt = authHeader.substring(7);
-        // Access token olduğu varsayımıyla username'i çıkar
-        userEmail = jwtService.extractUsernameFromAccessToken(jwt);
-
-        // 3. Kullanıcı adı varsa ve sistemde henüz doğrulanmadıysa
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+        // 2. Token işlemlerini TRY-CATCH içine alıyoruz
+        try {
+            // "Bearer " kısmını kesip sadece token'ı al
+            jwt = authHeader.substring(7);
             
-            // 4. Access token geçerliyse içeri al
-            if (jwtService.isAccessTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            // Access token olduğu varsayımıyla username'i çıkar
+            // Eğer token bozuksa burası hata fırlatır!
+            userEmail = jwtService.extractUsernameFromAccessToken(jwt);
+
+            // Kullanıcı adı varsa ve sistemde henüz doğrulanmadıysa
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                
+                // Access token geçerliyse içeri al
+                if (jwtService.isAccessTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+
+            // Her şey yolundaysa devam et
+            filterChain.doFilter(request, response);
+
+        } catch (Exception e) {
+            
+            // Konsola hatayı bas ki loglarda görelim
+            System.err.println("JWT Doğrulama Hatası: " + e.getMessage());
+
+            // Cevabı 401 UNAUTHORIZED olarak ayarla
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            // JSON formatında hata mesajını yaz
+            String jsonError = String.format(
+                    "{\"error\": \"Gecersiz veya Hatali Token\", \"details\": \"%s\"}", 
+                    e.getMessage()
+            );
+            
+            response.getWriter().write(jsonError);
+            // Zinciri kır ve bitir (return)
         }
-        filterChain.doFilter(request, response);
     }
 }

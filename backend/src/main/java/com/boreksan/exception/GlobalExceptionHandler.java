@@ -83,4 +83,13 @@ public class GlobalExceptionHandler {
         response.put("error_code", "DATA_INTEGRITY_VIOLATION");
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
+
+    // 8. SİPARİŞ SAATİ HATASI (400 Bad Request)
+    @ExceptionHandler(OrderTimeLimitException.class)
+    public ResponseEntity<Map<String, String>> handleOrderTimeLimit(OrderTimeLimitException e) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", e.getMessage());
+        response.put("error_code", "ORDER_TIME_LIMIT_EXCEEDED");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }
