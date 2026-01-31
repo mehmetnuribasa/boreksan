@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -53,11 +54,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthFilter) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable) // Token kullandığımız için CSRF kapalı
+            .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll() // Giriş serbest
-                .requestMatchers("/api/products/**").hasAnyRole("ADMIN", "CUSTOMER") // Ürünleri herkes görebilir
-                .anyRequest().authenticated() // Diğer her yer kilitli
+                // 1. HERKESE AÇIK ALANLAR (Login, Register, Swagger)
+                .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                // 2. ÜRÜN YÖNETİMİ (Ekleme/Silme/Güncelleme -> SADECE ADMIN)
+                .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                
+                // 3. ÜRÜN GÖRÜNTÜLEME (Giriş yapmayanlar dahil HERKES görebilir)
+                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+
+                // 4. SİPARİŞ DURUMU GÜNCELLEME (SADECE ADMIN)
+                .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
+
+                // 5. SİPARİŞ OLUŞTURMA VE LİSTELEME (Sadece Giriş Yapmış Kullanıcılar)
+                .requestMatchers("/api/orders/**").hasAnyRole("ADMIN", "CUSTOMER")
+
+                // 6. DİĞER HER ŞEY (Kilitli)
+                .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authenticationProvider(authenticationProvider())

@@ -4,6 +4,8 @@ import com.boreksan.entity.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,8 +20,9 @@ public class Order {
     private Long id;
 
     // Siparişi veren Pastane (User tablosuna bağlı)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE) // When a user is deleted, delete their orders too
     private User user;
 
     private Double totalPrice; // Toplam Tutar (Backend hesaplayacak)

@@ -3,6 +3,8 @@ package com.boreksan.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Data
 @Entity
@@ -16,6 +18,7 @@ public class OrderItem {
     @ManyToOne
     @JoinColumn(name = "order_id")
     @JsonIgnore // Sonsuz döngüye girmesin diye JSON'da gösterme
+    @OnDelete(action = OnDeleteAction.CASCADE) // When an order is deleted, delete its items too
     private Order order;
 
     @ManyToOne

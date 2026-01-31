@@ -10,6 +10,10 @@ import java.util.List;
 public class OrderResponse {
     private Long id;
     private String customerName; // sadece isim var!
+    private String shopName;
+    private String address;
+    private String phone;
+
     private Double totalPrice;
     private OrderStatus status;
     private LocalDateTime createdAt;

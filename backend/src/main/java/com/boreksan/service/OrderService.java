@@ -41,7 +41,11 @@ public class OrderService {
     private OrderResponse mapToOrderResponse(Order order) {
         OrderResponse response = new OrderResponse();
         response.setId(order.getId());
-        response.setCustomerName(order.getUser().getUsername()); // Şifreler gitti, sadece isim kaldı!
+        response.setCustomerName(order.getUser().getUsername());
+        response.setShopName(order.getUser().getShopName());
+        response.setAddress(order.getUser().getAddress());
+        response.setPhone(order.getUser().getPhone());
+
         response.setTotalPrice(order.getTotalPrice());
         response.setStatus(order.getStatus());
         response.setCreatedAt(order.getCreatedAt());
@@ -136,5 +140,18 @@ public class OrderService {
         return orders.stream()
                 .map(this::mapToOrderResponse)
                 .collect(Collectors.toList());
+    }
+
+    // 3. Durum Güncelle (Sadece Admin)
+    public OrderResponse updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        // Siparişi bul
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Sipariş bulunamadı!"));
+
+        // Durumu değiştir ve kaydet
+        order.setStatus(newStatus);
+        Order updatedOrder = orderRepository.save(order);
+
+        return mapToOrderResponse(updatedOrder);
     }
 }

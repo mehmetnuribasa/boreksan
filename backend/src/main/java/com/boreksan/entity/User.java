@@ -30,6 +30,12 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    private String shopName; // Exp: "Lale Pastanesi"
+
+    private String phone;    // Exp: "0555..."
+
+    private String address;  // Exp: "Atatürk Cad. No:5..."
+    
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

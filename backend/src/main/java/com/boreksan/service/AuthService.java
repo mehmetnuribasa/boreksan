@@ -40,6 +40,9 @@ public class AuthService {
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword())); // Encrypt the password
         user.setRole(Role.CUSTOMER);    // All new users are assigned the CUSTOMER role
+        user.setShopName(request.getShopName()); // Set shop name
+        user.setPhone(request.getPhone());       // Set phone number
+        user.setAddress(request.getAddress());   // Set address
 
         userRepository.save(user);
 
