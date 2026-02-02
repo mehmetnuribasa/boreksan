@@ -110,6 +110,22 @@ public class AuthService {
         return new AuthResponse(newAccessToken);
     }
 
+    @Transactional
+    public void logout(String refreshToken, HttpServletResponse response) {
+        // Clear the refresh token cookie
+        Cookie cookie = new Cookie("refreshToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+
+        if (refreshToken != null) {
+            refreshTokenRepository.findByToken(refreshToken)
+                    .ifPresent(refreshTokenRepository::delete);
+        }
+    }
+
     private void saveRefreshToken(User user, String token) {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);

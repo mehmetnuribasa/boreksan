@@ -62,17 +62,22 @@ public class GlobalExceptionHandler {
 
     // 6. VALIDATION ERRORS: Triggered when @Valid fails (400)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> validationErrors = new HashMap<>();
 
         // Iterate through all fields with errors (e.g., name, price, etc.)
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField(); // Field with error (e.g., name)
             String errorMessage = error.getDefaultMessage(); // Custom message (e.g., Cannot be empty)
-            errors.put(fieldName, errorMessage);
+            validationErrors.put(fieldName, errorMessage);
         });
 
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Girdiğiniz bilgilerde eksik veya hatalar var.");
+        response.put("error_code", "VALIDATION_ERROR");
+        response.put("validation_errors", validationErrors); // Hataları ayrı bir alana koyduk
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     // 7. DB CONSTRAINT: Unexpected unique constraint violations, etc. (409) - fallback
