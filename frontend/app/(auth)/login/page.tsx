@@ -25,13 +25,15 @@ export default function LoginPage() {
 
     try {
       const response = await api.post("/auth/login", formData);
-      const { accessToken } = response.data;
+      const { accessToken, role, username } = response.data;
       
-      // Access Token'ı sakla
+      // Store Access Token and user info in localStorage
       localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("userRole", role);
+      localStorage.setItem("username", username);
       
-      // Başarılı giriş sonrası yönlendir
-      router.push("/");
+      // Redirect to dashboard after successful login
+      router.push("/dashboard");
     } catch (err: any) {
       if (err.response && err.response.data && err.response.data.error) {
         setError(err.response.data.error);

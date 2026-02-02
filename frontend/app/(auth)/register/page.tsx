@@ -28,7 +28,14 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
 
-    // Validasyonlar (Backend zaten yapıyor ama UI için de iyi olur)
+    // Basic validations
+    if (formData.username.trim() === "") {
+      setError("Kullanıcı adı boş olamaz.");
+      setLoading(false);
+      return;
+    }
+
+    //Password validations
     if (formData.password.length < 8) {
       setError("Şifre en az 8 karakter olmalıdır.");
       setLoading(false);
@@ -55,7 +62,7 @@ export default function RegisterPage() {
       return;
     }
 
-    // Telefon numarası doğrulama (05 ile başlayan 11 haneli numara)
+    // Phone number validation (Turkish format)
     const phoneRegex = /^05\d{9}$/;
     if (!phoneRegex.test(formData.phone)) {
       setError("Geçerli bir telefon numarası giriniz (Örn: 05551234567).");
@@ -65,24 +72,25 @@ export default function RegisterPage() {
 
     try {
       const response = await api.post("/auth/register", formData);
-      const { accessToken } = response.data;
+      const { accessToken, role, username } = response.data;
 
-      // Access Token'ı sakla
+      // Store Access Token and user info in localStorage
       localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("userRole", role);
+      localStorage.setItem("username", username);
 
-      // Başarılı kayıt sonrası yönlendir
+      // Redirect to dashboard after successful registration
       alert("Kayıt başarılı!");
-      router.push("/");
+      router.push("/dashboard");
     } catch (err: any) {
       if (err.response && err.response.data) {
-        // Validation hatası varsa detayları göster
+        // Display validation errors from backend if available
         if (err.response.data.validation_errors) {
-            // Örn: İlk validation hatasını mesajın sonuna ekleyelim
             const firstErrorKey = Object.keys(err.response.data.validation_errors)[0];
             const firstErrorMessage = err.response.data.validation_errors[firstErrorKey];
             setError(`${err.response.data.message}\n${firstErrorMessage}`);
         } else if (err.response.data.message) {
-            // Standart hata mesajı
+            // General error message
             setError(err.response.data.message);
         } else if (err.response.data.error) {
            setError(err.response.data.error);
