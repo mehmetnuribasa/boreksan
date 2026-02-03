@@ -9,4 +9,5 @@ public class AuthResponse {
     private String accessToken;
     private String role;
     private String username;
+    private String shopName;
 }

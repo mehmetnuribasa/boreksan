@@ -58,7 +58,7 @@ public class AuthService {
         // Set the refresh token as an HttpOnly cookie
         addRefreshTokenCookie(response, refreshToken);
 
-        return new AuthResponse(accessToken, user.getRole().name(), user.getUsername());
+        return new AuthResponse(accessToken, user.getRole().name(), user.getUsername(), user.getShopName());
     }
 
     @Transactional
@@ -79,7 +79,7 @@ public class AuthService {
         // Set the refresh token as an HttpOnly cookie
         addRefreshTokenCookie(response, refreshToken);
 
-        return new AuthResponse(accessToken, user.getRole().name(), user.getUsername());
+        return new AuthResponse(accessToken, user.getRole().name(), user.getUsername(), user.getShopName());
     }
 
     @Transactional
@@ -107,7 +107,7 @@ public class AuthService {
 
         var newAccessToken = jwtService.generateAccessToken(user);
 
-        return new AuthResponse(newAccessToken, user.getRole().name(), user.getUsername());
+        return new AuthResponse(newAccessToken, user.getRole().name(), user.getUsername(), user.getShopName());
     }
 
     @Transactional
