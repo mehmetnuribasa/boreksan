@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.boreksan.dto.DailyOrderUpdateRequest; // Added import
+
 @Service
 public class OrderService {
 
@@ -78,17 +80,29 @@ public class OrderService {
         LocalTime now = LocalTime.now();
         LocalTime limit = LocalTime.of(22, 0); // Akşam 10
         
-        if (now.isAfter(limit)) {
-            throw new OrderTimeLimitException("Günlük sipariş saati (22:00) dolmuştur. Lütfen yarın sipariş veriniz.");
-        }
-
         // --- KURAL 2: KULLANICIYI BUL ---
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username)
+        User loggedInUser = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı"));
 
+        User targetUser = loggedInUser;
+        
+        // Eğer ADMIN ise ve request'te shopName varsa, o dükkan adına işlem yap
+        if (loggedInUser.getRole() == Role.ADMIN && request.getShopName() != null && !request.getShopName().isEmpty()) {
+            targetUser = userRepository.findByShopName(request.getShopName())
+                    .or(() -> userRepository.findByUsername(request.getShopName())) // Belki username verilmiştir
+                    .orElseThrow(() -> new UsernameNotFoundException("Belirtilen dükkan/kullanıcı bulunamadı: " + request.getShopName()));
+        }
+
+        // Admin değilse zaman kuralı geçerli olsun
+        if (loggedInUser.getRole() != Role.ADMIN) {
+             if (now.isAfter(limit)) {
+                throw new OrderTimeLimitException("Günlük sipariş saati (22:00) dolmuştur. Lütfen yarın sipariş veriniz.");
+            }
+        }
+
         Order order = new Order();
-        order.setUser(user);
+        order.setUser(targetUser);
         order.setStatus(OrderStatus.WAITING);
 
         List<OrderItem> items = new ArrayList<>();
@@ -140,6 +154,106 @@ public class OrderService {
         return orders.stream()
                 .map(this::mapToOrderResponse)
                 .collect(Collectors.toList());
+    }
+
+    // 3. GÜNLÜK MİKTAR GÜNCELLE (Admin Yetkisi ile)
+    @Transactional
+    public void updateShopDailyQuantity(DailyOrderUpdateRequest request) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User adminUser = userRepository.findByUsername(username).orElseThrow();
+
+        if (adminUser.getRole() != Role.ADMIN) {
+            throw new RuntimeException("Bu işlemi sadece Admin yapabilir.");
+        }
+
+        User targetUser = userRepository.findByShopName(request.getShopName())
+                .or(() -> userRepository.findByUsername(request.getShopName()))
+                .orElseThrow(() -> new UsernameNotFoundException("Dükkan bulunamadı: " + request.getShopName()));
+
+        java.time.LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
+        java.time.LocalDateTime endOfDay = java.time.LocalDate.now().atTime(23, 59, 59);
+
+        // Bugünün siparişlerini bul
+        List<Order> todayOrders = orderRepository.findAllByUserIdOrderByCreatedAtDesc(targetUser.getId()).stream()
+                .filter(o -> o.getCreatedAt().isAfter(startOfDay) && o.getCreatedAt().isBefore(endOfDay))
+                .filter(o -> o.getStatus() != OrderStatus.CANCELLED)
+                .collect(Collectors.toList());
+
+        // Mevcut stoğu hesapla
+        int currentTotal = todayOrders.stream()
+                .flatMap(o -> o.getItems().stream())
+                .filter(i -> i.getProduct().getId().equals(request.getProductId()))
+                .mapToInt(OrderItem::getQuantity)
+                .sum();
+
+        int diff = request.getTargetQuantity() - currentTotal;
+        if (diff == 0) return;
+
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new ProductNotFoundException("Ürün bulunamadı"));
+
+        if (diff > 0) {
+            // Ekleme yap
+            Order order = new Order();
+            order.setUser(targetUser);
+            order.setStatus(OrderStatus.WAITING);
+            
+            OrderItem item = new OrderItem();
+            item.setOrder(order);
+            item.setProduct(product);
+            item.setQuantity(diff);
+            item.setUnitPrice(product.getPriceTray());
+            item.setSubTotal(diff * item.getUnitPrice());
+            
+            List<OrderItem> items = new ArrayList<>();
+            items.add(item);
+            order.setItems(items);
+            order.setTotalPrice(item.getSubTotal());
+            
+            orderRepository.save(order);
+        } else {
+            // Çıkarma yap (diff negatif)
+            int toRemove = Math.abs(diff);
+
+            // Eski siparişlerden başlayarak sil (LIFO daha mantıklı ama burada created desc geliyor yani YENİLER başta)
+            // Eğer YENİ siparişi mi silmeliyiz, eskileri mi? Genelde son ekleneni silmek daha mantıklıdır (Undo gibi).
+            // `todayOrders` ORDER BY CreatedAt DESC -> Yani index 0 en yeni sipariş.
+            
+            for (Order order : todayOrders) {
+                if (toRemove <= 0) break;
+
+                // Bu siparişteki ilgili ürünleri bul
+                List<OrderItem> targetItems = order.getItems().stream()
+                        .filter(i -> i.getProduct().getId().equals(request.getProductId()))
+                        .collect(Collectors.toList());
+
+                for (OrderItem item : targetItems) {
+                    if (toRemove <= 0) break;
+
+                    if (item.getQuantity() > toRemove) {
+                        // Kısmi azalt
+                        item.setQuantity(item.getQuantity() - toRemove);
+                        item.setSubTotal(item.getQuantity() * item.getUnitPrice());
+                        toRemove = 0;
+                    } else {
+                        // Tamamen sil
+                        toRemove -= item.getQuantity();
+                        order.getItems().remove(item);
+                    }
+                }
+
+                // Sipariş boşaldıysa iptal et
+                if (order.getItems().isEmpty()) {
+                    order.setStatus(OrderStatus.CANCELLED);
+                    order.setTotalPrice(0.0);
+                } else {
+                    double newTotal = order.getItems().stream().mapToDouble(OrderItem::getSubTotal).sum();
+                    order.setTotalPrice(newTotal);
+                }
+                
+                orderRepository.save(order);
+            }
+        }
     }
 
     // 3. Durum Güncelle (Sadece Admin)

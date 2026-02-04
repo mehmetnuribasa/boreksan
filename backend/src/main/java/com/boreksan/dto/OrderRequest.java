@@ -11,4 +11,7 @@ public class OrderRequest {
     @Valid // Listenin İÇİNDEKİ OrderItemRequest kurallarını (Quantity, ProductId) çalıştırır.
     @NotEmpty(message = "Sipariş sepeti boş olamaz!") // Boş liste gönderilmesini engeller.
     private List<OrderItemRequest> items;
+
+    // Admin'in başkası adına sipariş vermesi için opsiyonel alan
+    private String shopName; 
 }

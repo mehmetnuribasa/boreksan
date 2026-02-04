@@ -1,6 +1,7 @@
 package com.boreksan.controller;
 
 import com.boreksan.dto.OrderRequest;
+import com.boreksan.dto.DailyOrderUpdateRequest;
 import com.boreksan.dto.OrderResponse;
 import com.boreksan.entity.enums.OrderStatus;
 import com.boreksan.service.OrderService;
@@ -29,6 +30,12 @@ public class OrderController {
     @GetMapping
     public List<OrderResponse> getOrders() {
         return orderService.getAllOrders();
+    }
+
+    // Admin gün içi miktar güncelleme (Azaltma/Arttırma)
+    @PostMapping("/daily-update")
+    public void updateDailyQuantity(@Valid @RequestBody DailyOrderUpdateRequest request) {
+        orderService.updateShopDailyQuantity(request);
     }
 
     // Durum Güncelle (PATCH daha uygundur ama PUT da olur)

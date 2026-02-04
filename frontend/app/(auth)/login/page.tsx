@@ -51,13 +51,13 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-gray-50">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="mx-auto h-20 w-20 bg-white rounded-2xl flex items-center justify-center shadow-lg border border-orange-100 mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-orange-600">
+        <div className="mx-auto h-20 w-20 bg-white rounded-2xl flex items-center justify-center shadow-lg border border-red-100 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-red-600">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
             </svg>
         </div>
         <h2 className="text-center text-3xl font-extrabold tracking-tight text-gray-900">
-          Böreksan'a <span className="text-orange-600">Hoşgeldiniz</span>
+          Böreksan'a <span className="text-red-600">Hoşgeldiniz</span>
         </h2>
         <p className="mt-3 text-center text-sm text-gray-500">
           Yönetim paneline erişmek için giriş yapın
@@ -77,7 +77,7 @@ export default function LoginPage() {
                   name="username"
                   type="text"
                   required
-                  className="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6 transition-all duration-200"
+                  className="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6 transition-all duration-200"
                   value={formData.username}
                   onChange={handleChange}
                 />
@@ -96,7 +96,7 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
-                  className="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6 transition-all duration-200"
+                  className="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6 transition-all duration-200"
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -120,7 +120,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`flex w-full justify-center rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-3 text-sm font-bold leading-6 text-white shadow-lg hover:to-orange-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 transition-all duration-200 transform hover:scale-[1.02] ${
+                className={`flex w-full justify-center rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-3 py-3 text-sm font-bold leading-6 text-white shadow-lg hover:to-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-all duration-200 transform hover:scale-[1.02] ${
                   loading ? "opacity-70 cursor-not-allowed" : ""
                 }`}
               >
@@ -133,7 +133,7 @@ export default function LoginPage() {
             Hesabın yok mu?{" "}
             <Link
               href="/register"
-              className="font-semibold leading-6 text-orange-600 hover:text-orange-500 transition-colors"
+              className="font-semibold leading-6 text-red-600 hover:text-red-500 transition-colors"
             >
               Hemen kayıt ol
             </Link>
